@@ -3,11 +3,9 @@ package com.publicis.sapient.microservice.footballleague.service;
 import com.publicis.sapient.microservice.footballleague.domain.Country;
 import com.publicis.sapient.microservice.footballleague.domain.League;
 import com.publicis.sapient.microservice.footballleague.domain.StandingsDto;
-import com.publicis.sapient.microservice.footballleague.exception.DataNotFoundException;
 import com.publicis.sapient.microservice.footballleague.model.Standings;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -17,10 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
-import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
@@ -50,11 +44,11 @@ public class StandingServiceImplTest {
     public void getStandings() {
 
         when(restTemplate.getForEntity("/api/football?action=get_countries&APIkey=abvshsgdshdgsjdsjkdjsknasl", Country[].class)).
-                thenReturn(new ResponseEntity(getCountry(), HttpStatus.OK));
+                thenReturn(ResponseEntity.ok(getCountry()));
         when(restTemplate.getForEntity("/api/football?action=get_leagues&APIkey=abvshsgdshdgsjdsjkdjsknasl&country_id=123", League[].class)).
-                thenReturn(new ResponseEntity(getLeagues(), HttpStatus.OK));
+                thenReturn(ResponseEntity.ok(getLeagues()));
         when(restTemplate.getForEntity("/api/football?action=get_standings&APIkey=abvshsgdshdgsjdsjkdjsknasl&league_id=444", StandingsDto[].class)).
-                thenReturn(new ResponseEntity(getStandingDto(), HttpStatus.OK));
+                thenReturn(ResponseEntity.ok(getStandingDto()));
 
         Standings standings = standingService.getStandings(COUNTRY_NAME, LEAGUE_NAME, TEAM_NAME);
 
@@ -67,63 +61,76 @@ public class StandingServiceImplTest {
         assertEquals(1,standings.getOverAllLeaguePosition());
     }
 
-    @Test(expected = DataNotFoundException.class)
+    @Test
     public void shouldThrowExceptionWhenNoCountryFound() {
         when(restTemplate.getForEntity("/api/football?action=get_countries&APIkey=abvshsgdshdgsjdsjkdjsknasl", Country[].class)).
-                thenReturn(new ResponseEntity(new Country[0], HttpStatus.OK));
-       standingService.getStandings(COUNTRY_NAME, LEAGUE_NAME, TEAM_NAME);
+                thenReturn(new ResponseEntity<>(new Country[0], HttpStatus.OK));
+        final Standings standings = standingService.getStandings(COUNTRY_NAME, LEAGUE_NAME, TEAM_NAME);
+        assertNull(standings.getCountryName());
     }
 
-    @Test(expected = DataNotFoundException.class)
+    @Test
     public void shouldThrowExceptionWhenNoMatchingCountryFound() {
         when(restTemplate.getForEntity("/api/football?action=get_countries&APIkey=abvshsgdshdgsjdsjkdjsknasl", Country[].class)).
-                thenReturn(new ResponseEntity(getCountry(), HttpStatus.OK));
-        standingService.getStandings("invalid country", LEAGUE_NAME, TEAM_NAME);
+                thenReturn(new ResponseEntity<>(getCountry(), HttpStatus.OK));
+        final Standings invalid_country = standingService.getStandings("invalid country", LEAGUE_NAME, TEAM_NAME);
+        assertNull(invalid_country.getCountryName());
     }
 
 
-    @Test(expected = DataNotFoundException.class)
+    @Test
     public void shouldThrowExceptionWhenNoLeagueFound() {
         when(restTemplate.getForEntity("/api/football?action=get_countries&APIkey=abvshsgdshdgsjdsjkdjsknasl", Country[].class)).
-                thenReturn(new ResponseEntity(getCountry(), HttpStatus.OK));
+                thenReturn(new ResponseEntity<>(getCountry(), HttpStatus.OK));
         when(restTemplate.getForEntity("/api/football?action=get_leagues&APIkey=abvshsgdshdgsjdsjkdjsknasl&country_id=123", League[].class)).
-                thenReturn(new ResponseEntity(new League[0], HttpStatus.OK));
+                thenReturn(new ResponseEntity<>(new League[0], HttpStatus.OK));
 
-        standingService.getStandings(COUNTRY_NAME, LEAGUE_NAME, TEAM_NAME);
+        final Standings standings = standingService.getStandings(COUNTRY_NAME, LEAGUE_NAME, TEAM_NAME);
+        assertNotNull(standings.getCountryName());
+        assertNull(standings.getLeagueName());
     }
 
-    @Test(expected = DataNotFoundException.class)
+    @Test
     public void shouldThrowExceptionWhenNoMatchingLeagueFound() {
         when(restTemplate.getForEntity("/api/football?action=get_countries&APIkey=abvshsgdshdgsjdsjkdjsknasl", Country[].class)).
-                thenReturn(new ResponseEntity(getCountry(), HttpStatus.OK));
+                thenReturn(new ResponseEntity<>(getCountry(), HttpStatus.OK));
         when(restTemplate.getForEntity("/api/football?action=get_leagues&APIkey=abvshsgdshdgsjdsjkdjsknasl&country_id=123", League[].class)).
-                thenReturn(new ResponseEntity(getLeagues(), HttpStatus.OK));
-        standingService.getStandings(COUNTRY_NAME, "invalid League", TEAM_NAME);
+                thenReturn(new ResponseEntity<>(getLeagues(), HttpStatus.OK));
+        final Standings standings = standingService.getStandings(COUNTRY_NAME, "invalid League", TEAM_NAME);
+        assertNotNull(standings.getCountryName());
+        assertNull(standings.getLeagueName());
     }
 
 
-    @Test(expected = DataNotFoundException.class)
+    @Test
     public void shouldThrowExceptionWhenNoStandingTeamFound() {
         when(restTemplate.getForEntity("/api/football?action=get_countries&APIkey=abvshsgdshdgsjdsjkdjsknasl", Country[].class)).
-                thenReturn(new ResponseEntity(getCountry(), HttpStatus.OK));
+                thenReturn(new ResponseEntity<>(getCountry(), HttpStatus.OK));
         when(restTemplate.getForEntity("/api/football?action=get_leagues&APIkey=abvshsgdshdgsjdsjkdjsknasl&country_id=123", League[].class)).
-                thenReturn(new ResponseEntity(getLeagues(), HttpStatus.OK));
+                thenReturn(new ResponseEntity<>(getLeagues(), HttpStatus.OK));
         when(restTemplate.getForEntity("/api/football?action=get_standings&APIkey=abvshsgdshdgsjdsjkdjsknasl&league_id=444", StandingsDto[].class)).
-                thenReturn(new ResponseEntity(new StandingsDto[0], HttpStatus.OK));
+                thenReturn(new ResponseEntity<>(new StandingsDto[0], HttpStatus.OK));
 
-        standingService.getStandings(COUNTRY_NAME, LEAGUE_NAME, TEAM_NAME);
+        final Standings standings = standingService.getStandings(COUNTRY_NAME, LEAGUE_NAME, TEAM_NAME);
+        assertNotNull(standings.getCountryName());
+        assertNotNull(standings.getLeagueName());
+        assertNull(standings.getTeamName());
     }
 
-    @Test(expected = DataNotFoundException.class)
+    @Test
     public void shouldThrowExceptionWhenNoMatchingTeamFound() {
         when(restTemplate.getForEntity("/api/football?action=get_countries&APIkey=abvshsgdshdgsjdsjkdjsknasl", Country[].class)).
-                thenReturn(new ResponseEntity(getCountry(), HttpStatus.OK));
+                thenReturn(new ResponseEntity<>(getCountry(), HttpStatus.OK));
         when(restTemplate.getForEntity("/api/football?action=get_leagues&APIkey=abvshsgdshdgsjdsjkdjsknasl&country_id=123", League[].class)).
-                thenReturn(new ResponseEntity(getLeagues(), HttpStatus.OK));
+                thenReturn(new ResponseEntity<>(getLeagues(), HttpStatus.OK));
         when(restTemplate.getForEntity("/api/football?action=get_standings&APIkey=abvshsgdshdgsjdsjkdjsknasl&league_id=444", StandingsDto[].class)).
-                thenReturn(new ResponseEntity(getStandingDto(), HttpStatus.OK));
+                thenReturn(new ResponseEntity<>(getStandingDto(), HttpStatus.OK));
 
-        standingService.getStandings(COUNTRY_NAME, LEAGUE_NAME, "invalid team");
+        final Standings standings = standingService.getStandings(COUNTRY_NAME, LEAGUE_NAME, "invalid team");
+        assertNotNull(standings.getCountryName());
+        assertNotNull(standings.getLeagueName());
+        assertNull(standings.getTeamName());
+
     }
     private StandingsDto[] getStandingDto() {
         StandingsDto[] standingsDtos = new StandingsDto[1];
