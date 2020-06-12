@@ -46,7 +46,7 @@ pipeline {
                 sh '''
                     pwd
                     echo "Spring profile" ${PROFILE}
-                    make build -e "NAME=$IMAGE_ID" "VERSION=${GIT_COMMIT}" "PROFILE=$PROFILE"
+                    make build -e "NAME=$REGISTRY_CRED_USR/$IMAGE_ID" "VERSION=${GIT_COMMIT}" "PROFILE=$PROFILE"
                    '''
             }
         }
@@ -55,7 +55,7 @@ pipeline {
                 withCredentials([string(credentialsId: 'docker-user', variable: 'dockerPassword')]) {
                   sh '''
                       docker login -u  $REGISTRY_CRED_USR -p ${dockerPassword}
-                      docker push "$IMAGE_ID:${GIT_COMMIT}"
+                      docker push "$REGISTRY_CRED_USR/$IMAGE_ID:${GIT_COMMIT}"
                   '''
                 }
             }
