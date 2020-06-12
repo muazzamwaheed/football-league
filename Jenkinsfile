@@ -62,10 +62,7 @@ pipeline {
         }
 
         stage ('Deploy into AKS') {
-            when { branch 'master' }
-            agent { label 'master' }
             environment { DEPLOY_TYPE = "" }
-
             steps {
               fnDeploy()
             }
