@@ -1,6 +1,6 @@
 pipeline {
 
-    agent { label 'dockeredge' }
+    agent { label 'master' }
     environment {
             REGISTRY_CRED_USR = "muazzamwaheed"
             CONTAINER_REGISTRY = "football.product"
