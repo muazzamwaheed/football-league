@@ -3,8 +3,7 @@ pipeline {
     agent { label 'master' }
     environment {
             REGISTRY_CRED_USR = "muazzamwaheed"
-            CONTAINER_REGISTRY = "football.product"
-            IMAGE_ID = "$CONTAINER_REGISTRY/football-app"
+            IMAGE_ID = "football"
             PROFILE = "dev"
     }
     stages {
@@ -36,7 +35,7 @@ pipeline {
             }
         }
 
-        stage ('Packaging for conainer') {
+        stage ('Packaging for container') {
             steps {
                 sh './mvnw -Dmaven.test.failure.ignore=false clean install'
             }
@@ -64,7 +63,7 @@ pipeline {
 
         stage ('Deploy into AKS') {
             when { branch 'master' }
-            agent { label 'dockerprod' }
+            agent { label 'master' }
             environment { DEPLOY_TYPE = "" }
 
             steps {
