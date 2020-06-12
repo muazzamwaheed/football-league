@@ -55,7 +55,7 @@ pipeline {
                 withCredentials([string(credentialsId: 'docker-user', variable: 'dockerPassword')]) {
                   sh '''
                       docker login -u  $REGISTRY_CRED_USR -p ${dockerPassword}
-                      docker push "$REGISTRY_CRED_USR/$IMAGE_ID:${GIT_COMMIT}"
+                      docker push "$IMAGE_ID:${GIT_COMMIT}"
                   '''
                 }
             }
