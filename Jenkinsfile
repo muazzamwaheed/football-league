@@ -56,7 +56,7 @@ pipeline {
                 withCredentials([string(credentialsId: 'docker-user', variable: 'dockerPassword')]) {
                   sh '''
                       docker login -u  $REGISTRY_CRED_USR -p ${dockerPassword} $CONTAINER_REGISTRY
-                      docker push "$IMAGE_ID:${GIT_COMMIT}"
+                      docker push "$REGISTRY_CRED_USR/$IMAGE_ID:${GIT_COMMIT}"
                   '''
                 }
             }
@@ -81,8 +81,8 @@ void fnDeploy() {
                         cd ${WORKSPACE}
                         ls -l $(pwd)/aks/
                         kubectl apply -f $(pwd)/aks/app.namespace.yaml || true
-                        cat aks/app.deployment.yaml | sed -e 's|__COMMIT_ID__|'${GIT_COMMIT}'|g' | kubectl -n maestro-portal apply -f -
-                        cat aks/app.ingress.yaml | sed 's/\${DEPLOY_TYPE}/'"$DEPLOY_TYPE/g" | kubectl -n maestro-portal apply -f -
+                        cat aks/app.deployment.yaml | sed -e 's|__COMMIT_ID__|'${GIT_COMMIT}'|g' | kubectl -n football-league apply -f -
+                        cat aks/app.ingress.yaml | sed 's/\${DEPLOY_TYPE}/'"$DEPLOY_TYPE/g" | kubectl -n football-league apply -f -
 
                     '''
 }

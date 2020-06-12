@@ -3,7 +3,7 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: football-app
-  namespace: maestro-portal
+  namespace: football-league
   labels:
     website: football-app
   annotations:
