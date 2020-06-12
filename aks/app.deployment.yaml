@@ -1,5 +1,5 @@
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
@@ -27,7 +27,7 @@ spec:
         - name: mwao
       containers:
         - name: prd-regt
-          image: football.product/football-app:__COMMIT_ID__
+          image: football:__COMMIT_ID__
           imagePullPolicy: Always
           ports:
             - containerPort: 9091
