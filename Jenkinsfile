@@ -1,33 +1,90 @@
-node {
+pipeline {
 
-    def mvn = tool (name: 'Maven3', type: 'maven') + 'bin/mvn'
+    agent { label 'dockeredge' }
+    environment {
+            REGISTRY_CRED_USR = "muazzamwaheed"
+            CONTAINER_REGISTRY = "football.product"
+            IMAGE_ID = "$CONTAINER_REGISTRY/football-app"
+            PROFILE = "dev"
+    }
+    stages {
+        stage ('Initialise') {
+            steps {
+                script {
+                    sh 'git rev-parse HEAD > commit'
+                    env.GIT_COMMIT = readFile('commit').trim()
 
-        stage('SCM Checkout'){
-            git branch: 'master',
-            url: 'https://github.com/muazzamwaheed/football-league'
-        }
+                    sh 'git rev-parse --short HEAD > short_commit'
+                    env.GIT_COMMIT_SHORT = readFile('short_commit').trim().toLowerCase()
 
-        stage('Mvn Package'){
-            sh "${mvn} clean package install"
-        }
-
-        stage('Remove Container on Dev Server'){
-             sh 'docker top football-app && docker stop -t 10 football-app'
-             sh 'docker top football-app && docker rm -v football-app'
-         }
-
-        stage('Build Docker Image'){
-                sh 'docker build -t muazzamwaheed/football-app:latest .'
-        }
-
-        stage('Push Docker Image'){
-            withCredentials([string(credentialsId: 'docker-user', variable: 'dockerPassword')]) {
-              sh "docker login -u muazzamwaheed -p ${dockerPassword}"
+                    sh '''
+                        echo ${GIT_BRANCH}|sed 's#feature/##' > branch_name
+                      '''
+                    env.BRANCH_NAME_CLEAN = readFile('branch_name').trim().toLowerCase()
+                    sh '''
+                        echo "PATH = ${PATH}"
+                        echo "M2_HOME = ${M2_HOME}"
+                       '''
+                }
             }
-           sh 'docker push muazzamwaheed/football-app:latest'
         }
 
-        stage('Run Container on Dev Server'){
-           sh 'docker run -p 9091:9091 -d --name football-app muazzamwaheed/football-app:latest'
+        stage ('Run UT/IT test') {
+            steps {
+                sh './mvnw test'
+               step( [$class: 'JacocoPublisher',
+                                 exclusionPattern: '**/*constants/**,**/*model/**,**/Application*,**/*Test*'] )
+
+            }
         }
+
+        stage ('Packaging for conainer') {
+            steps {
+                sh './mvnw -Dmaven.test.failure.ignore=false clean install'
+            }
+        }
+
+        stage ('Build container') {
+            steps {
+                sh '''
+                    pwd
+                    echo "Spring profile" ${PROFILE}
+                    make build -e "NAME=$IMAGE_ID" "VERSION=${GIT_COMMIT}" "PROFILE=$PROFILE"
+                   '''
+            }
+        }
+        stage ('Push to registry') {
+            steps {
+                withCredentials([string(credentialsId: 'docker-user', variable: 'dockerPassword')]) {
+                  sh '''
+                      docker login -u  $REGISTRY_CRED_USR -p ${dockerPassword}
+                      docker push "$IMAGE_ID:${GIT_COMMIT}"
+                  '''
+                }
+            }
+        }
+
+        stage ('Deploy into Prod AKS') {
+            when { branch 'master' }
+            agent { label 'dockerprod' }
+            environment { DEPLOY_TYPE = "" }
+
+            steps {
+              fnDeploy()
+            }
+        }
+    }
+}
+
+void fnDeploy() {
+                sh '''
+                    echo "Process started for branch" ${GIT_BRANCH}
+
+                        cd ${WORKSPACE}
+                        ls -l $(pwd)/aks/
+                        kubectl apply -f $(pwd)/aks/app.namespace.yaml || true
+                        cat aks/app.deployment.yaml | sed -e 's|__COMMIT_ID__|'${GIT_COMMIT}'|g' | kubectl -n maestro-portal apply -f -
+                        cat aks/app.ingress.yaml | sed 's/\${DEPLOY_TYPE}/'"$DEPLOY_TYPE/g" | kubectl -n maestro-portal apply -f -
+
+                    '''
 }

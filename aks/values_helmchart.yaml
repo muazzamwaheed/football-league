@@ -1,0 +1,49 @@
+## Environment values injected into the container
+env: {}
+  ##
+  # open:
+    # ENV_NAME: ENV_VALUE
+  # secret:
+    # SECRET_ENV_NAME: SECRET_ENV_VALUE
+
+## Mounts configuration values as file
+configFiles:
+  enabled: false
+  ## Name of the configmap that must be mounted as a file volume, defaults to release name
+  # name:
+
+deployment:
+  enabled: true
+  ## The image to deploy with the release
+  image:
+    repository: football.product/football-app
+    tag: __TAG_IMAGE__
+    pullPolicy: IfNotPresent
+    ## Specify name of Docker secret to access images in private repos
+    pullSecrets:
+    - name: mwao
+  # Number of replicas of the application to run
+  replicaCount: 1
+  ## Deployment annotations
+  annotations: {}
+  #   name: value
+  replicas:
+  ## Replicas annotations
+    annotations: {}
+
+## Specifies resource limits at which the pod must operate. Kubernetes may not
+## schedule pods or terminate running pods if these limits are violated.
+#resources:
+  ## Resource limits to request initially
+#  requests:
+    ## CPU requested in millicores
+#    cpu: 1000m
+    ## Memory requested in megabytes
+#    memory: 2Gi
+#  limits:
+    ## Max CPU requested. Pod is terminated beyond this limit.
+#    cpu: 2000m
+    ## Max memory requested. Pod is terminated beyond this limit.
+#    memory: 8Gi
+    
+#ingress: {}
