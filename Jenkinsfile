@@ -12,8 +12,8 @@ node {
         }
 
         stage('Remove Container on Dev Server'){
-             sh 'docker top football-app || docker stop -t 10 football-app'
-             sh 'docker top football-app || docker rm -v football-app'
+             sh 'docker top football-app && docker stop -t 10 football-app'
+             sh 'docker top football-app && docker rm -v football-app'
          }
 
         stage('Build Docker Image'){
