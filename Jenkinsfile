@@ -31,6 +31,7 @@ pipeline {
 
         stage ('Run UT/IT test') {
             steps {
+                sh 'chmod +x ./mvnw'
                 sh './mvnw test'
                step( [$class: 'JacocoPublisher',
                                  exclusionPattern: '**/*constants/**,**/*model/**,**/Application*,**/*Test*'] )
