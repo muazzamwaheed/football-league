@@ -56,13 +56,13 @@ pipeline {
                 withCredentials([string(credentialsId: 'docker-user', variable: 'dockerPassword')]) {
                   sh '''
                       docker login -u  $REGISTRY_CRED_USR -p ${dockerPassword}
-                      docker push "$IMAGE_ID:${GIT_COMMIT}"
+                      docker push "$REGISTRY_CRED_USR/$IMAGE_ID:${GIT_COMMIT}"
                   '''
                 }
             }
         }
 
-        stage ('Deploy into Prod AKS') {
+        stage ('Deploy into AKS') {
             when { branch 'master' }
             agent { label 'dockerprod' }
             environment { DEPLOY_TYPE = "" }
